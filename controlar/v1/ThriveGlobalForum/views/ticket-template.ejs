@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Conference Ticket</title>
+  <style>
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      /* padding: 40px; */
+      background: #f8f9fa;
+      color: #212529;
+      padding: 0;
+      margin: 0;
+    }
+    .top_header_invoice .ivoice_text{
+      font-weight: 700;
+      color: white;
+      font-size: 18px;
+    }
+    .ticket-wrapper-1 {
+      max-width: 750px;
+      margin: 0 auto;
+      padding-top: 40px;
+      padding-left: 40px;
+      padding-right: 40px;
+      padding-bottom: 20px;
+      border-radius: 12px;
+    }
+    .ticket-wrapper-2 {
+      max-width: 750px;
+      margin: 0 auto;
+      padding-top: 10px;
+      padding-left: 40px;
+      padding-right: 40px;
+      padding-bottom: 40px;
+      border-radius: 12px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .header_text h1 {
+      text-align: end;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+      color: #1c1c1e;
+    }
+    .header_text p {
+      text-align: end;
+      font-size: 14px;
+      margin: 2px 0 0 0;
+      color: #6c757d;
+    }
+    .section-title {
+      margin-top: 5px;
+      margin-bottom: 12px;
+      border-bottom: 2px solid rgb(11, 181, 147);
+      padding-bottom: 6px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .label {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 2px;
+      color: #6c757d;
+    }
+    .info-group {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .info-label {
+      font-weight: 500;
+      color: #495057;
+    }
+    .info-value {
+      font-weight: 500;
+      color: #212529;
+    }
+    .amounts {
+      margin-top: 5px;
+      border-top: 1px solid #ced4da;
+      padding-top: 12px;
+    }
+    .amount-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .amount-row strong {
+      font-weight: 600;
+    }
+    .footer {
+      margin-top: 32px;
+      font-size: 13px;
+      color: #868e96;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div style="background-color: rgb(11, 181, 147);">
+    <div class="ticket-wrapper-1">
+      <h3 style="font-weight: 700; color: white; margin: 0px; padding-top: 20px;">Invoice</h3>
+    </div>
+  </div>
+  <div class="ticket-wrapper-2">
+    <div class="header">
+      <div class="header_img">
+        <img style="height: 100px; width: auto;" src="<%= logo %>" alt="">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 15px" class="header_text">
+        <h1>International Conference on Entrepreneurship, <br>Health and Climate</h1>
+        <p>registration@thriveglobalforum.com</p>
+      </div>
+    </div>
+
+    <div class="section-title"></div>
+    <div class="info-row">
+      <div>
+        <span class="label">Transaction ID: <%= attendee.transactionID %></span>
+      </div>
+      <div>
+        <span class="label">Date: <%= createdAt %></span>
+      </div>
+    </div>
+
+    <!-- Attendees Block -->
+    <div class="attendee-block">
+      <div>
+        <div style="display: flex; justify-content: space-between; ">
+          <div>
+              <h2 style="margin:0px; color: rgb(11, 181, 147)"><%= attendee.firstName %> <%= attendee.lastName %></h2>
+              <p style="margin: 0; padding: 4px 0px"><%= attendee.email %></p>
+              <% if (attendee.organizationName) { %>
+                  <p style="margin: 0; padding: 4px 0px"><%= attendee.organizationName %></p>
+              <% } %>
+              <% if (attendee.organizationName) { %>
+                  <p style="margin: 0; padding: 4px 0px"><%= attendee.phone %></p>
+              <% } %>
+          </div>
+          <div>
+            <p style="color: rgb(11, 181, 147); font-size: 22px; text-align: end; margin-top: 0; margin-bottom: 10px">Total</p>
+            <strong >US$ <%= attendee?.taxDiscountCupon?.total || attendee.price %></strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--Purcher INFO Block  -->
+    <div style="margin-top: 20px;">
+        <p style="font-size: 12px; color: rgb(120, 120, 120)">Payer Information</p>
+        <p style="font-weight: 500; margin: 0; padding: 4px 0px;"><%= attendee?.purcher?.firstName %> <%= attendee?.purcher?.lastName %></p>
+        <p style="margin: 0; padding: 4px 0px"><%= attendee?.purcher?.email %></p>
+        <p style="margin: 0; padding: 4px 0px"><%= attendee?.purcher?.phone || '-' %></p>
+    </div>
+
+    <div style="padding: 10px; background-color: rgb(11, 181, 147); border-radius: 6px; margin-top:6px;">
+      <p style="color: white; font-weight: bold; margin: 0; padding: 0;">Discription</p>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 5px; margin: 2px 0;">
+      <div>
+        <p style="font-weight: bold; margin-bottom: 4px"><%= attendee.ticketsType %></p>
+        <p style="margin: 0; padding-bottom: 5px;">$<%= attendee.price %>.00 x 1</p>
+      </div>
+      <p style="font-weight: bold;">US$ <%= attendee.price %></p>
+    </div>
+
+    <div class="amounts">
+      <div class="amount-row">
+        <span>Harmonized Sales Tax (HST) (15%)</span>
+        <span>$<%= attendee?.taxDiscountCupon?.tax || 0 %></span>
+      </div>
+      <div class="amount-row">
+        <span>Group Discount (10%)</span>
+        <span>-$<%= attendee?.taxDiscountCupon?.groupDiscount || 0 %></span>
+      </div>
+
+      <% if (attendee?.taxDiscountCupon?.cupon && attendee?.taxDiscountCupon?.groupDiscount == 0) { %>
+        <div class="amount-row">
+          <span>Coupon Discount</span>
+          <span>-$<%= attendee?.taxDiscountCupon?.cuponPrice %></span>
+        </div>
+      <% } %>
+
+      <% if (attendee?.taxDiscountCupon?.cupon && attendee?.taxDiscountCupon?.groupDiscount > 0) { %>
+        <div class="amount-row">
+          <span><%= attendee?.taxDiscountCupon?.cuponApplied %></span>
+          <span>-$<%= attendee?.taxDiscountCupon?.cuponPrice %></span>
+        </div>
+      <% } %>
+
+      <div class="amount-row" style="border-top: 1px solid #ced4da; padding-top: 10px;">
+        <strong>Total Amount</strong>
+        <strong>US$ <%= attendee?.taxDiscountCupon?.total || attendee.price %></strong>
+      </div>
+    </div>
+    <!-- Footer Block -->
+    <br>
+    <p style="padding-bottom: 5px;">Payment terms: This invoice acts as a contract. Once issued, payment and cancellation conditions apply. Conference registration fee is Non-Refundable</p>
+    <span style="font-weight: bold; padding: 4px 6px; border-top: 3px solid rgb(11, 181, 147); margin-top: 10px">Thanks</span>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f9fc;
+    }
+    .email-wrapper {
+      max-width: 700px;
+      margin: auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      background-color: #1677ff;
+      padding: 20px;
+      text-align: center;
+      color: white;
+    }
+    .content {
+      padding: 20px;
+    }
+    .success {
+      text-align: center;
+      color: green;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      margin-top: 15px;
+      border-collapse: collapse;
+    }
+    td, th {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .attendee-card {
+      display: flex;
+      justify-content: space-between !important;
+      align-items: center !important;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #eee;
+      border-radius: 6px;
+    }
+    .attendee_download{
+      flex: 1;
+    }
+    .btn {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="header">
+      <h1>International Conference on Entrepreneurship, Health and Climate</h1>
+      <p>8-10 June, 2026</p>
+    </div>
+    <div class="content">
+      <table>
+        <tr><td>Transaction ID: <%= transactionID %></td><td align="right"><%= createdAt %></td></tr>
+      </table>
+
+      <h3>Ticket Details</h3>
+      <table>
+        <% if (lowTicketsQuantity > 0) { %>
+          <tr><td>Low and Middle Income Countries (<%= lowTicketsQuantity %>x)</td><td align="right">US$<%= lowTicketsQuantity * 440 %></td></tr>
+        <% } %>
+        <% if (fullTicketsQuantity > 0) { %>
+          <tr><td>Full Conference Registration (<%= fullTicketsQuantity %>x)</td><td align="right">US$<%= fullTicketsQuantity * 500 %></td></tr>
+        <% } %>
+        <% if (corporateTicketsQuantity > 0) { %>
+          <tr><td>Corporate Tickets (<%= corporateTicketsQuantity %>x)</td><td align="right">US$<%= corporateTicketsQuantity * 700 %></td></tr>
+        <% } %>
+        <tr><td><strong>Actual Amount</strong></td><td align="right"><strong>US$<%= totalPrice %></strong></td></tr>
+
+        <% if (taxAmount > 0) { %>
+          <tr><td>Harmonized Sales Tax (HST) (15%)</td><td align="right">$<%= taxAmount %></td></tr>
+        <% } %>
+        <% if (groupDiscount > 0) { %>
+          <tr><td>Group Discount (10%)</td><td align="right">$<%= groupDiscount %></td></tr>
+        <% } %>
+        <% if (couponDiscount > 0) { %>
+          <tr><td>Coupon Discount</td><td align="right">$<%= couponDiscount %></td></tr>
+        <% } %>
+        <tr><td><strong>Sub Total</strong></td><td align="right"><strong>US$<%= finalAmount %></strong></td></tr>
+      </table>
+
+      <h3 style="margin-top: 30px;">Download Attendees Tickets</h3>
+      <% attendees.forEach(att => { %>
+        <div class="attendee-card">
+          <div class="attendee_download">
+            <strong><%= att.firstName %> <%= att.lastName %></strong><br/>
+            <%= att.ticketsType %>
+          </div>
+          <div class="attendee_download">
+            <a href="https://tickets-sales-with-braintree-payment-backend-production.up.railway.app/api/v1/ThriveGlobalForum/download-attendees-tickets/<%= att._id %>" class="btn">Download Invoice</a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>
