@@ -43,7 +43,7 @@
     }
     .header_text h1 {
       text-align: end;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       margin: 0;
       color: #1c1c1e;
@@ -117,8 +117,8 @@
         <img style="height: 100px; width: auto;" src="<%= logo %>" alt="">
       </div>
       <div style="display: flex; flex-direction: column; gap: 15px" class="header_text">
-        <h1>International Conference on Entrepreneurship, <br>Health and Climate</h1>
-        <p>registration@thriveglobalforum.com</p>
+        <h1>International Conference on Entrepreneurship, <br>Innovate, Empower, Thrive: Pioneering Solutions <br> for Business, Health, and Climate Resilience at <br> #InnovateEmpowerThrive2027</h1>
+        <p>registration@iccpc.ca</p>
       </div>
     </div>
 
@@ -182,19 +182,19 @@
         <span>-$<%= attendee?.taxDiscountCupon?.groupDiscount || 0 %></span>
       </div>
 
-      <% if (attendee?.taxDiscountCupon?.cupon && attendee?.taxDiscountCupon?.groupDiscount == 0) { %>
+      <!-- <% if (attendee?.taxDiscountCupon?.cupon) { %> -->
         <div class="amount-row">
           <span>Coupon Discount</span>
           <span>-$<%= attendee?.taxDiscountCupon?.cuponPrice %></span>
         </div>
-      <% } %>
+      <!-- <% } %> -->
 
-      <% if (attendee?.taxDiscountCupon?.cupon && attendee?.taxDiscountCupon?.groupDiscount > 0) { %>
+      <!-- <% if (attendee?.taxDiscountCupon?.cupon && attendee?.taxDiscountCupon?.groupDiscount > 0) { %>
         <div class="amount-row">
           <span><%= attendee?.taxDiscountCupon?.cuponApplied %></span>
           <span>-$<%= attendee?.taxDiscountCupon?.cuponPrice %></span>
         </div>
-      <% } %>
+      <% } %> -->
 
       <div class="amount-row" style="border-top: 1px solid #ced4da; padding-top: 10px;">
         <strong>Total Amount</strong>

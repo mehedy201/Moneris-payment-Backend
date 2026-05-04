@@ -2,9 +2,9 @@ const express = require('express');
 const ThriveGlobalForum = require('../../../controlar/v1/ThriveGlobalForum/makePayment.controlar');
 const router = express.Router();
 
-// Get Braintree Client Token____________________________________
-router.get('/client-token', ThriveGlobalForum.getBraintreeToken);
-router.post('/checkout', ThriveGlobalForum.getThriveGlobalForumpaymentsFromEventTickets);
+// Get Moneris Client Ticket____________________________________
+router.get('/preload-ticket', ThriveGlobalForum.getMonerisTicket); // Done 
+router.post('/verify-payment', ThriveGlobalForum.verifyMonerisPayment); // Done
 
 // Purcher API Route____________________________________
 router.get('/purcher-data', ThriveGlobalForum.getPurcherData);

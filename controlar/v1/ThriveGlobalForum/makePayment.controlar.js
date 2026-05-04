@@ -1,5 +1,4 @@
 const { ObjectId } = require("mongodb");
-const { braintreeGateway } = require("../../../utilities/monerisConnect");
 const { getDb } = require("../../../utilities/dbConnect");
 const { transporter } = require("../../../utilities/nodeMailerConnect");
 const puppeteer = require("puppeteer");
@@ -9,15 +8,95 @@ const path = require("path");
 const localDate = require("../../../hooks/loacalDate");
 const ExcelJS = require("exceljs");
 
-// Get Braintree Token_____________________________________________________
-// ________________________________________________________________________
-module.exports.getBraintreeToken = async (req, res, next) => {
+module.exports.getMonerisTicket = async (req, res) => {
   try {
-    const gateway = braintreeGateway();
-    const response = await gateway.clientToken.generate({});
-    res.send({ clientToken: response.clientToken });
-  } catch (err) {
-    res.status(500).send({ error: "Failed to generate client token" });
+    console.log("🟡 [STEP 4] getMonerisTicket controller");
+    console.log("🟡 [STEP 4] Query params:", req.query);
+
+    const {
+      generateCheckoutTicket,
+    } = require("../../../utilities/monerisConnect");
+
+    const {
+      lowTicketsQuantity,
+      fullTicketsQuantity,
+      corporateTicketsQuantity,
+      cuponCode,
+    } = req.query;
+
+    const lowPrice = 440;
+    const fullPrice = 500;
+    const corpPrice = 550;
+    const taxRate = 0.15;
+
+    const totalTickets =
+      Number(lowTicketsQuantity) +
+      Number(fullTicketsQuantity) +
+      Number(corporateTicketsQuantity);
+
+    console.log("🟡 [STEP 4] Total tickets:", totalTickets);
+
+    if (totalTickets <= 0) {
+      console.error("❌ [STEP 4] কোনো ticket select করা হয়নি");
+      return res.status(400).json({ error: "No tickets selected" });
+    }
+
+    let totalPrice =
+      lowTicketsQuantity * lowPrice +
+      fullTicketsQuantity * fullPrice +
+      corporateTicketsQuantity * corpPrice;
+
+    console.log("🟡 [STEP 5] Total price (tax ছাড়া):", totalPrice);
+
+    const taxAmount = +(totalPrice * taxRate).toFixed(2);
+    let totalWithTax = +(totalPrice + taxAmount).toFixed(2);
+
+    console.log("🟡 [STEP 5] Tax amount:", taxAmount);
+    console.log("🟡 [STEP 5] Total with tax:", totalWithTax);
+
+    let groupDiscount = 0;
+    if (totalTickets > 1) {
+      groupDiscount = +(totalWithTax * 0.1).toFixed(2);
+      totalWithTax -= groupDiscount;
+      console.log("🟡 [STEP 5] Group discount applied:", groupDiscount);
+    }
+
+    let couponDiscount = 0;
+    if (cuponCode === "Malik03") {
+      couponDiscount = 505;
+      totalWithTax -= couponDiscount;
+      console.log("🟡 [STEP 5] Coupon discount applied:", couponDiscount);
+    }
+
+    if (totalWithTax < 1) {
+      totalWithTax = 1.0;
+      console.log("🟡 [STEP 5] Minimum amount enforced: 1.00");
+    }
+
+    const payAblePrice = +totalWithTax.toFixed(2);
+    const orderId = "TGF-" + Date.now();
+
+    console.log("✅ [STEP 5] Final payable amount:", payAblePrice);
+    console.log("✅ [STEP 5] Generated orderId:", orderId);
+
+    const formattedAmount = payAblePrice.toFixed(2);
+
+    console.log("🟡 [STEP 6] generateCheckoutTicket কে call করা হচ্ছে...");
+
+    const ticket = await generateCheckoutTicket({
+      amount: formattedAmount,
+      orderId,
+    });
+
+    console.log("✅ [STEP 6] Ticket পাওয়া গেছে:", ticket);
+
+    res.status(200).json({ ticket, orderId, amount: payAblePrice });
+  } catch (error) {
+    console.error(
+      "❌ [STEP 6] getMonerisTicket controller এ error:",
+      error.message,
+    );
+    res.status(500).json({ error: "Failed to generate ticket" });
   }
 };
 
@@ -38,7 +117,7 @@ const sendEmailToAttendee = async (attendee) => {
       from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
       to: attendee.email,
       subject:
-        "Acknowledgement of Registration-International Conference on Entrepreneurship, Health and Climate",
+        "Acknowledgement of Registration-Innovate, Empower, Thrive: Pioneering Solutions for Business, Health, and Climate Resilience at #InnovateEmpowerThrive2027",
       html: htmlContent,
     });
 
@@ -48,12 +127,312 @@ const sendEmailToAttendee = async (attendee) => {
   }
 };
 
-module.exports.getThriveGlobalForumpaymentsFromEventTickets = async (
-  req,
-  res,
-) => {
+// module.exports.getThriveGlobalForumpaymentsFromEventTickets = async (
+//   req,
+//   res,
+// ) => {
+//   const {
+//     nonce,
+//     lowTicketsQuantity,
+//     fullTicketsQuantity,
+//     corporateTicketsQuantity,
+//     cuponCode,
+//     purcherAttendeesData,
+//   } = req.body;
+
+//   const db = getDb();
+//   const session = db.client.startSession();
+
+//   try {
+//     // 1. Validate and calculate price server-side
+//     const lowPrice = 400,
+//       fullPrice = 450,
+//       corpPrice = 500,
+//       taxRate = 0.15;
+
+//     const totalTickets =
+//       lowTicketsQuantity + fullTicketsQuantity + corporateTicketsQuantity;
+//     if (totalTickets <= 0)
+//       return res.status(400).json({ error: "No tickets selected" });
+
+//     let totalPrice =
+//       lowTicketsQuantity * lowPrice +
+//       fullTicketsQuantity * fullPrice +
+//       corporateTicketsQuantity * corpPrice;
+
+//     const taxAmount = +(totalPrice * taxRate).toFixed(2);
+
+//     let totalWithTax = +(totalPrice + taxAmount).toFixed(2);
+
+//     // Group discount
+//     let groupDiscount = 0;
+//     if (totalTickets > 1) {
+//       groupDiscount = +(totalWithTax * 0.1).toFixed(2);
+//       totalWithTax -= groupDiscount;
+//     }
+
+//     // Coupon discount
+//     let couponDiscount = 0;
+//     if (cuponCode === "Malik03") {
+//       couponDiscount = 459;
+//       totalWithTax -= couponDiscount;
+//     }
+
+//     if (totalWithTax < 1) totalWithTax = 1.0;
+
+//     const payAblePrice = +totalWithTax.toFixed(2);
+
+//     // 2. Process payment
+//     const gateway = braintreeGateway();
+//     const paymentResult = await gateway.transaction.sale({
+//       amount: payAblePrice.toFixed(2),
+//       paymentMethodNonce: nonce,
+//       options: {
+//         submitForSettlement: true,
+//         threeDSecure: { required: true },
+//       },
+//     });
+
+//     if (!paymentResult.success)
+//       return res
+//         .status(400)
+//         .json({ success: false, message: paymentResult.message });
+
+//     // 3. MongoDB transaction for Purcher & Attendees save atomically
+//     let purcherID;
+//     let attendeesWithIds = [];
+//     await session.withTransaction(async () => {
+//       const purcherDetails = {
+//         totalPrice,
+//         taxAmount,
+//         groupDiscount,
+//         couponDiscount,
+//         lowTicketsQuantity,
+//         fullTicketsQuantity,
+//         corporateTicketsQuantity,
+//         finalAmount: payAblePrice,
+//         transactionID: paymentResult.transaction.id,
+//         purcher: purcherAttendeesData.purcher,
+//         paymentStatus: "Completed",
+//         createdAt: new Date(),
+//       };
+
+//       const insertPurcher = await db
+//         .collection("ThriveGlobalForum-Tickets-Purcher")
+//         .insertOne(purcherDetails, { session });
+//       purcherID = insertPurcher.insertedId;
+
+//       // Enrich attendees with transaction info and purcherID
+//       const enrichedAttendees = purcherAttendeesData.attendees.map((att) => ({
+//         ...att,
+//         transactionID: paymentResult.transaction.id,
+//         purcherID,
+//         paymentStatus: "Completed",
+//         createdAt: new Date(),
+//       }));
+
+//       const insertAttendees = await db
+//         .collection("ThriveGlobalForum-Tickets-Attendees")
+//         .insertMany(enrichedAttendees, { session });
+
+//       attendeesWithIds = Object.values(insertAttendees.insertedIds).map(
+//         (id, idx) => ({
+//           _id: id,
+//           ...enrichedAttendees[idx],
+//         }),
+//       );
+
+//       await db
+//         .collection("ThriveGlobalForum-Tickets-Purcher")
+//         .updateOne(
+//           { _id: purcherID },
+//           { $set: { attendees: attendeesWithIds } },
+//           { session },
+//         );
+//     });
+
+//     // 4. Send confirmation email (non-blocking)
+//     const templatePath = path.join(__dirname, "views", "email-template.ejs");
+//     const htmlTemplate = fs.readFileSync(templatePath, "utf-8");
+//     const htmlContent = ejs.render(htmlTemplate, {
+//       transactionID: paymentResult.transaction.id,
+//       totalPrice,
+//       taxAmount,
+//       groupDiscount,
+//       couponDiscount,
+//       finalAmount: payAblePrice,
+//       lowTicketsQuantity,
+//       fullTicketsQuantity,
+//       corporateTicketsQuantity,
+//       totalTickets,
+//       attendees: attendeesWithIds,
+//       purcher: purcherAttendeesData.purcher,
+//       createdAt: localDate(new Date()),
+//     });
+
+//     transporter.sendMail(
+//       {
+//         from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
+//         to: `${purcherAttendeesData.purcher.email}`,
+//         subject:
+//           "International Conference on Entrepreneurship, Health and Climate",
+//         html: htmlContent,
+//       },
+//       (err, info) => {
+//         if (err) console.error("Email sending error:", err);
+//         else console.log("Email sent:", info.response);
+//       },
+//     );
+//     transporter.sendMail(
+//       {
+//         from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
+//         to: `registration@iccpc.ca`,
+//         subject:
+//           "International Conference on Entrepreneurship, Health and Climate",
+//         html: htmlContent,
+//       },
+//       (err, info) => {
+//         if (err) console.error("Email sending error:", err);
+//         else console.log("Email sent:", info.response);
+//       },
+//     );
+
+//     for (const attendee of attendeesWithIds) {
+//       await sendEmailToAttendee(attendee);
+//     }
+
+//     // 5. Return success response
+//     res.status(200).json({
+//       success: true,
+//       transactionID: paymentResult.transaction.id,
+//       purcherID,
+//       finalAmount: payAblePrice,
+//     });
+//   } catch (error) {
+//     console.error("Payment processing error:", error);
+//     res
+//       .status(500)
+//       .json({ error: "Payment processing failed. Please try again." });
+//   } finally {
+//     await session.endSession();
+//   }
+// };
+
+// ______________________________________________________________________
+// ______________________________________________________________________
+
+// Get Purcher DATA ______________________________________________________
+// _______________________________________________________________________
+
+// module.exports.getThriveGlobalForumpaymentsFromEventTickets = async (req, res) => {
+//   const {
+//     ticket, // The success ticket/receipt received from Moneris frontend
+//     lowTicketsQuantity,
+//     fullTicketsQuantity,
+//     corporateTicketsQuantity,
+//     cuponCode,
+//     purcherAttendeesData,
+//   } = req.body;
+
+//   const db = getDb();
+//   const session = db.client.startSession();
+
+//   try {
+//     // 1. Validate and calculate price server-side (Logic remains same)
+//     const lowPrice = 400, fullPrice = 450, corpPrice = 500, taxRate = 0.15;
+//     const totalTickets = lowTicketsQuantity + fullTicketsQuantity + corporateTicketsQuantity;
+
+//     if (totalTickets <= 0) return res.status(400).json({ error: "No tickets selected" });
+
+//     let totalPrice = (lowTicketsQuantity * lowPrice) + (fullTicketsQuantity * fullPrice) + (corporateTicketsQuantity * corpPrice);
+//     const taxAmount = +(totalPrice * taxRate).toFixed(2);
+//     let totalWithTax = +(totalPrice + taxAmount).toFixed(2);
+
+//     // Apply discounts (Same logic as your previous code)
+//     let groupDiscount = totalTickets > 1 ? +(totalWithTax * 0.1).toFixed(2) : 0;
+//     if (totalTickets > 1) totalWithTax -= groupDiscount;
+
+//     let couponDiscount = cuponCode === "Malik03" ? 459 : 0;
+//     if (couponDiscount > 0) totalWithTax -= couponDiscount;
+
+//     if (totalWithTax < 1) totalWithTax = 1.0;
+//     const payAblePrice = +totalWithTax.toFixed(2);
+
+//     // 2. Moneris Verification Note
+//     // In Moneris Checkout, the payment is processed on the frontend.
+//     // Here we use the 'ticket' as the transaction reference.
+//     const transactionID = ticket;
+
+//     // 3. MongoDB transaction (Process remains identical to Braintree)
+//     let purcherID;
+//     let attendeesWithIds = [];
+//     await session.withTransaction(async () => {
+//       const purcherDetails = {
+//         totalPrice,
+//         taxAmount,
+//         groupDiscount,
+//         couponDiscount,
+//         lowTicketsQuantity,
+//         fullTicketsQuantity,
+//         corporateTicketsQuantity,
+//         finalAmount: payAblePrice,
+//         transactionID: transactionID,
+//         purcher: purcherAttendeesData.purcher,
+//         paymentStatus: "Completed",
+//         createdAt: new Date(),
+//       };
+
+//       const insertPurcher = await db.collection("ThriveGlobalForum-Tickets-Purcher").insertOne(purcherDetails, { session });
+//       purcherID = insertPurcher.insertedId;
+
+//       const enrichedAttendees = purcherAttendeesData.attendees.map((att) => ({
+//         ...att,
+//         transactionID: transactionID,
+//         purcherID,
+//         paymentStatus: "Completed",
+//         createdAt: new Date(),
+//       }));
+
+//       const insertAttendees = await db.collection("ThriveGlobalForum-Tickets-Attendees").insertMany(enrichedAttendees, { session });
+
+//       attendeesWithIds = Object.values(insertAttendees.insertedIds).map((id, idx) => ({
+//         _id: id,
+//         ...enrichedAttendees[idx],
+//       }));
+
+//       await db.collection("ThriveGlobalForum-Tickets-Purcher").updateOne(
+//         { _id: purcherID },
+//         { $set: { attendees: attendeesWithIds } },
+//         { session }
+//       );
+//     });
+
+//     // 4. Send confirmation emails (Logic remains same)
+//     // Use the same transporter.sendMail logic here as in your original code
+//     // Replace paymentResult.transaction.id with transactionID
+
+//     res.status(200).json({
+//       success: true,
+//       transactionID: transactionID,
+//       purcherID,
+//       finalAmount: payAblePrice,
+//     });
+
+//   } catch (error) {
+//     console.error("Moneris processing error:", error);
+//     res.status(500).json({ error: "Database synchronization failed." });
+//   } finally {
+//     await session.endSession();
+//   }
+// };
+
+module.exports.verifyMonerisPayment = async (req, res) => {
+  console.log("🟡 [STEP 1] verifyMonerisPayment শুরু হয়েছে");
+  console.log("🟡 [STEP 1] Body:", JSON.stringify(req.body, null, 2));
+
   const {
-    nonce,
+    ticket,
+    orderId,
     lowTicketsQuantity,
     fullTicketsQuantity,
     corporateTicketsQuantity,
@@ -61,68 +440,197 @@ module.exports.getThriveGlobalForumpaymentsFromEventTickets = async (
     purcherAttendeesData,
   } = req.body;
 
+  console.log("purcherAttendeesData=========", purcherAttendeesData);
+
+  if (!ticket || !orderId) {
+    console.error("❌ [STEP 1] Ticket বা OrderId missing");
+    return res.status(400).json({
+      success: false,
+      message: "Missing ticket or orderId",
+    });
+  }
+
   const db = getDb();
   const session = db.client.startSession();
 
   try {
-    // 1. Validate and calculate price server-side
-    const lowPrice = 400,
-      fullPrice = 450,
-      corpPrice = 500,
-      taxRate = 0.15;
+    const {
+      verifyCheckoutReceipt,
+    } = require("../../../utilities/monerisConnect");
+
+    /* ================================================
+    STEP 2: VERIFY RECEIPT
+    payment complete না হলে এখানেই বন্ধ
+    ================================================ */
+    console.log("🟡 [STEP 2] Receipt verify করা হচ্ছে...");
+
+    let receipt;
+    try {
+      receipt = await verifyCheckoutReceipt(ticket);
+    } catch (verifyError) {
+      console.error("❌ [STEP 2] Verify failed:", verifyError.message);
+      return res.status(400).json({
+        success: false,
+        message: verifyError.message || "Payment not approved",
+      });
+    }
+
+    console.log("✅ [STEP 2] Receipt:", JSON.stringify(receipt, null, 2));
+    console.log("✅ [STEP 2] Payment approved!");
+
+    /* ================================================
+STEP 3: CALCULATION
+================================================ */
+    const LOW_PRICE = 440;
+    const FULL_PRICE = 500;
+    const CORP_PRICE = 550;
+    const taxRate = 0.15;
 
     const totalTickets =
-      lowTicketsQuantity + fullTicketsQuantity + corporateTicketsQuantity;
-    if (totalTickets <= 0)
-      return res.status(400).json({ error: "No tickets selected" });
+      Number(lowTicketsQuantity) +
+      Number(fullTicketsQuantity) +
+      Number(corporateTicketsQuantity);
 
-    let totalPrice =
-      lowTicketsQuantity * lowPrice +
-      fullTicketsQuantity * fullPrice +
-      corporateTicketsQuantity * corpPrice;
+    if (totalTickets <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid tickets",
+      });
+    }
+
+    const totalPrice =
+      Number(lowTicketsQuantity) * LOW_PRICE +
+      Number(fullTicketsQuantity) * FULL_PRICE +
+      Number(corporateTicketsQuantity) * CORP_PRICE;
 
     const taxAmount = +(totalPrice * taxRate).toFixed(2);
-
     let totalWithTax = +(totalPrice + taxAmount).toFixed(2);
 
-    // Group discount
+    console.log("🟡 [STEP 3] totalPrice:", totalPrice);
+    console.log("🟡 [STEP 3] taxAmount:", taxAmount);
+    console.log("🟡 [STEP 3] totalWithTax:", totalWithTax);
+
     let groupDiscount = 0;
     if (totalTickets > 1) {
       groupDiscount = +(totalWithTax * 0.1).toFixed(2);
-      totalWithTax -= groupDiscount;
+      totalWithTax = +(totalWithTax - groupDiscount).toFixed(2);
+      console.log("🟡 [STEP 3] groupDiscount:", groupDiscount);
     }
 
-    // Coupon discount
     let couponDiscount = 0;
     if (cuponCode === "Malik03") {
-      couponDiscount = 459;
-      totalWithTax -= couponDiscount;
+      couponDiscount = 505;
+      totalWithTax = +(totalWithTax - couponDiscount).toFixed(2);
+      console.log("🟡 [STEP 3] couponDiscount:", couponDiscount);
     }
 
-    if (totalWithTax < 1) totalWithTax = 1.0;
+    // ✅ Debug — coupon match হচ্ছে কিনা দেখুন
+    console.log("🟡 [STEP 3] cuponCode received:", JSON.stringify(cuponCode));
+    console.log("🟡 [STEP 3] couponDiscount:", couponDiscount);
 
+    if (totalWithTax < 1) totalWithTax = 1.0;
     const payAblePrice = +totalWithTax.toFixed(2);
 
-    // 2. Process payment
-    const gateway = braintreeGateway();
-    const paymentResult = await gateway.transaction.sale({
-      amount: payAblePrice.toFixed(2),
-      paymentMethodNonce: nonce,
-      options: {
-        submitForSettlement: true,
-        threeDSecure: { required: true },
+    console.log("✅ [STEP 3] payAblePrice:", payAblePrice);
+
+    /* ================================================
+STEP 6: ATTENDEE CALCULATION
+================================================ */
+    const TICKET_PRICE_MAP = {
+      "Low and Middle Income Countries": LOW_PRICE,
+      "Full Conference Registration": FULL_PRICE,
+      Corporate: CORP_PRICE,
+    };
+
+    const enrichedAttendees = purcherAttendeesData.attendees.map(
+      (att, index) => {
+        const attPrice = TICKET_PRICE_MAP[att.ticketsType] || att.price;
+
+        console.log(
+          `🟡 [STEP 6] Attendee ${index + 1} ticketsType:`,
+          JSON.stringify(att.ticketsType),
+        );
+        console.log(`🟡 [STEP 6] Attendee ${index + 1} price:`, attPrice);
+
+        // ✅ Tax — নিজের price এর উপর
+        const attTax = +(attPrice * taxRate).toFixed(2);
+
+        // ✅ Group Discount — (price + tax) এর উপর 10%
+        const attPriceWithTax = +(attPrice + attTax).toFixed(2);
+        const attGroupDiscount =
+          groupDiscount > 0 ? +(attPriceWithTax * 0.1).toFixed(2) : 0;
+
+        // ✅ Coupon — সমান ভাগে
+        const attCouponShare =
+          couponDiscount > 0 ? +(couponDiscount / totalTickets).toFixed(2) : 0;
+
+        let attTotal = +(
+          attPriceWithTax -
+          attGroupDiscount -
+          attCouponShare
+        ).toFixed(2);
+
+        if (attTotal < 0) attTotal = 0;
+        if (totalTickets === 1) attTotal = payAblePrice;
+
+        const taxDiscountCupon = {
+          price: attPrice || 0,
+          tax: attTax || 0,
+          groupDiscount: attGroupDiscount || 0,
+          total: attTotal || 0,
+          cuponPrice: attCouponShare || 0,
+          cupon: cuponCode || "N/A",
+          cuponShare: `${couponDiscount} / ${totalTickets}` || "N/A",
+        };
+
+        console.log(`✅ [STEP 6] Attendee ${index + 1}:`, taxDiscountCupon);
+
+        return {
+          ticketsType: att.ticketsType,
+          price: attPrice,
+          firstName: att.firstName,
+          lastName: att.lastName,
+          email: att.email,
+          phone: att.phone || "",
+          organizationName: att.organizationName || "",
+          restrictions: att.restrictions || "",
+          requireVisa: att.requireVisa || "NO",
+          passportNumber: att.passportNumber || "",
+          passportExpiry: att.passportExpiry || "",
+          countryOfPassport: att.countryOfPassport || "",
+          purcher: purcherAttendeesData.purcher,
+          taxDiscountCupon,
+          transactionID: ticket,
+          purcherID: null,
+          paymentStatus: "Completed",
+          createdAt: new Date(),
+        };
       },
-    });
+    );
 
-    if (!paymentResult.success)
-      return res
-        .status(400)
-        .json({ success: false, message: paymentResult.message });
+    /* ================================================
+    STEP 7: EMAIL TEMPLATE PREPARE
+    Transaction এর বাইরে prepare করো
+    ================================================ */
+    console.log("🟡 [STEP 7] Email template prepare করা হচ্ছে...");
 
-    // 3. MongoDB transaction for Purcher & Attendees save atomically
+    const templatePath = path.join(__dirname, "views", "email-template.ejs");
+    const htmlTemplate = fs.readFileSync(templatePath, "utf-8");
+
+    console.log("✅ [STEP 7] Template ready!");
+
+    /* ================================================
+    STEP 8: TRANSACTION
+    DB Save + Email — সব একসাথে
+    একটা fail → সব rollback
+    ================================================ */
+    console.log("🟡 [STEP 8] Transaction শুরু হচ্ছে...");
+
     let purcherID;
     let attendeesWithIds = [];
+
     await session.withTransaction(async () => {
+      /* —— Purcher Save —— */
       const purcherDetails = {
         totalPrice,
         taxAmount,
@@ -131,38 +639,43 @@ module.exports.getThriveGlobalForumpaymentsFromEventTickets = async (
         lowTicketsQuantity,
         fullTicketsQuantity,
         corporateTicketsQuantity,
+        totalTickets,
         finalAmount: payAblePrice,
-        transactionID: paymentResult.transaction.id,
-        purcher: purcherAttendeesData.purcher,
+        transactionID: ticket,
         paymentStatus: "Completed",
+        purcher: purcherAttendeesData.purcher,
         createdAt: new Date(),
       };
+
+      console.log("🟡 [STEP 8] Purcher save করা হচ্ছে...");
 
       const insertPurcher = await db
         .collection("ThriveGlobalForum-Tickets-Purcher")
         .insertOne(purcherDetails, { session });
-      purcherID = insertPurcher.insertedId;
 
-      // Enrich attendees with transaction info and purcherID
-      const enrichedAttendees = purcherAttendeesData.attendees.map((att) => ({
+      purcherID = insertPurcher.insertedId;
+      console.log("✅ [STEP 8] Purcher saved, ID:", purcherID);
+
+      /* —— Attendees Save —— */
+      const attendeesWithPurcherID = enrichedAttendees.map((att) => ({
         ...att,
-        transactionID: paymentResult.transaction.id,
         purcherID,
-        paymentStatus: "Completed",
-        createdAt: new Date(),
       }));
+
+      console.log(
+        "🟡 [STEP 8] Attendees save করা হচ্ছে, count:",
+        attendeesWithPurcherID.length,
+      );
 
       const insertAttendees = await db
         .collection("ThriveGlobalForum-Tickets-Attendees")
-        .insertMany(enrichedAttendees, { session });
+        .insertMany(attendeesWithPurcherID, { session });
 
       attendeesWithIds = Object.values(insertAttendees.insertedIds).map(
-        (id, idx) => ({
-          _id: id,
-          ...enrichedAttendees[idx],
-        }),
+        (id, i) => ({ _id: id, ...attendeesWithPurcherID[i] }),
       );
 
+      /* —— Purcher Update —— */
       await db
         .collection("ThriveGlobalForum-Tickets-Purcher")
         .updateOne(
@@ -170,79 +683,74 @@ module.exports.getThriveGlobalForumpaymentsFromEventTickets = async (
           { $set: { attendees: attendeesWithIds } },
           { session },
         );
+
+      console.log("✅ [STEP 8] DB save complete!");
+
+      /* —— Email Render —— */
+      const htmlContent = ejs.render(htmlTemplate, {
+        transactionID: ticket,
+        totalPrice,
+        taxAmount,
+        groupDiscount,
+        couponDiscount,
+        finalAmount: payAblePrice,
+        lowTicketsQuantity,
+        fullTicketsQuantity,
+        corporateTicketsQuantity,
+        attendees: attendeesWithIds,
+        purcher: purcherAttendeesData.purcher,
+        createdAt: new Date(),
+      });
+
+      /* —— Promise.all — সব email একসাথে —— */
+      console.log("🟡 [STEP 8] Email পাঠানো হচ্ছে parallel এ...");
+
+      await Promise.all([
+        transporter.sendMail({
+          from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
+          to: purcherAttendeesData.purcher.email,
+          subject: "Registration Confirmation",
+          html: htmlContent,
+        }),
+        transporter.sendMail({
+          from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
+          to: "registration@iccpc.ca",
+          subject: "New Registration",
+          html: htmlContent,
+        }),
+        ...attendeesWithIds.map((att) => sendEmailToAttendee(att)),
+      ]);
+
+      console.log("✅ [STEP 8] সব email sent!");
     });
 
-    // 4. Send confirmation email (non-blocking)
-    const templatePath = path.join(__dirname, "views", "email-template.ejs");
-    const htmlTemplate = fs.readFileSync(templatePath, "utf-8");
-    const htmlContent = ejs.render(htmlTemplate, {
-      transactionID: paymentResult.transaction.id,
-      totalPrice,
-      taxAmount,
-      groupDiscount,
-      couponDiscount,
-      finalAmount: payAblePrice,
-      lowTicketsQuantity,
-      fullTicketsQuantity,
-      corporateTicketsQuantity,
-      totalTickets,
-      attendees: attendeesWithIds,
-      purcher: purcherAttendeesData.purcher,
-      createdAt: localDate(new Date()),
-    });
+    console.log("✅ [STEP 8] Transaction complete!");
 
-    transporter.sendMail(
-      {
-        from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
-        to: `${purcherAttendeesData.purcher.email}`,
-        subject:
-          "International Conference on Entrepreneurship, Health and Climate",
-        html: htmlContent,
-      },
-      (err, info) => {
-        if (err) console.error("Email sending error:", err);
-        else console.log("Email sent:", info.response);
-      },
-    );
-    transporter.sendMail(
-      {
-        from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
-        to: `registration@thriveglobalforum.com`,
-        subject:
-          "International Conference on Entrepreneurship, Health and Climate",
-        html: htmlContent,
-      },
-      (err, info) => {
-        if (err) console.error("Email sending error:", err);
-        else console.log("Email sent:", info.response);
-      },
-    );
+    /* ================================================
+    FINAL RESPONSE
+    ================================================ */
+    console.log("✅ [FINAL] PurcherID:", purcherID);
 
-    for (const attendee of attendeesWithIds) {
-      await sendEmailToAttendee(attendee);
-    }
-
-    // 5. Return success response
     res.status(200).json({
       success: true,
-      transactionID: paymentResult.transaction.id,
+      transactionID: ticket,
       purcherID,
       finalAmount: payAblePrice,
     });
   } catch (error) {
-    console.error("Payment processing error:", error);
-    res
-      .status(500)
-      .json({ error: "Payment processing failed. Please try again." });
+    console.error("❌ [ERROR] Failed:", error.message);
+    console.error("❌ [ERROR] Stack:", error.stack);
+
+    res.status(500).json({
+      success: false,
+      message: "Verification failed",
+    });
   } finally {
     await session.endSession();
+    console.log("🟡 [FINAL] Session শেষ হয়েছে");
   }
 };
-// ______________________________________________________________________
-// ______________________________________________________________________
 
-// Get Purcher DATA ______________________________________________________
-// _______________________________________________________________________
 module.exports.getPurcherData = async (req, res, next) => {
   try {
     const db = getDb();
@@ -318,6 +826,7 @@ module.exports.downloadPurcherDetails = async (req, res, next) => {
         _id: new ObjectId(purcherID),
       });
 
+    console.log("purcher======", purcher);
     if (!purcher) return res.status(404).send("Purcher not found");
 
     const templatePath = path.join(__dirname, "views", "email-template.ejs");
@@ -458,6 +967,8 @@ module.exports.downloadAttendeesTickets = async (req, res, next) => {
       .findOne({
         _id: new ObjectId(attendeeId),
       });
+
+    console.log("attendee======", attendee);
 
     if (!attendee) return res.status(404).send("Attendee not found");
     const templatePath = path.join(__dirname, "views", "ticket-template.ejs");
