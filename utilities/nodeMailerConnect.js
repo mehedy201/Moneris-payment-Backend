@@ -4,27 +4,29 @@ console.log("EMAIL:", process.env.NODE_MAILER_USER_EMAIL);
 console.log("PASS LENGTH:", process.env.NODE_MAILER_PASSWORD?.length);
 
 // localhost site email configuration 
-module.exports.transporter = nodemailer.createTransport({
-    // host: "smtp.hostinger.com",
-    service: 'gmail',
-    port: 587,
-    secure: false, // Use `true` for port 465, `false` for all other ports if false 587 port
-    auth: {
-      user: process.env.NODE_MAILER_USER_EMAIL,
-      pass: process.env.NODE_MAILER_PASSWORD, 
-    },
-});
+// module.exports.transporter = nodemailer.createTransport({
+//     // host: "smtp.hostinger.com",
+//     service: 'gmail',
+//     // port: 587,
+//     // secure: false, // Use `true` for port 465, `false` for all other ports if false 587 port
+//     port: 465,
+//     secure: true, // Use `true` for port 465, `false` for all other ports if false 587 port
+//     auth: {
+//       user: process.env.NODE_MAILER_USER_EMAIL,
+//       pass: process.env.NODE_MAILER_PASSWORD, 
+//     },
+// });
 
 
 
 // Live Site Email Configuration
-// module.exports.transporter = nodemailer.createTransport({
-//     host: "smtp.hostinger.com",
-//     // service: 'gmail',
-//     port: 465,
-//     secure: true, // Use `true` for port 465, `false` for all other ports if false 587 port
-//     auth: {
-//       user: process.env.NODE_MAILER_USER_EMAIL,// hostinger email
-//       pass: process.env.NODE_MAILER_PASSWORD, // hostinger Email password
-//     },
-// });
+module.exports.transporter = nodemailer.createTransport({
+    host: "event.iccpc.ca",
+    // service: 'gmail',
+    port: 465,
+    secure: true, // Use `true` for port 465, `false` for all other ports if false 587 port
+    auth: {
+      user: process.env.NODE_MAILER_USER_EMAIL,// hostinger email
+      pass: process.env.NODE_MAILER_PASSWORD, // hostinger Email password
+    },
+});

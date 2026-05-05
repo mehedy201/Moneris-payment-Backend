@@ -114,7 +114,7 @@ const sendEmailToAttendee = async (attendee) => {
     });
 
     const info = await transporter.sendMail({
-      from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
+      from: `'ICCPC' ${process.env.NODE_MAILER_USER_EMAIL}`,
       to: attendee.email,
       subject:
         "Acknowledgement of Registration-Innovate, Empower, Thrive: Pioneering Solutions for Business, Health, and Climate Resilience at #InnovateEmpowerThrive2027",
@@ -408,13 +408,13 @@ STEP 6: ATTENDEE CALCULATION
 
       await Promise.all([
         transporter.sendMail({
-          from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
+          from: `'ICCPC' ${process.env.NODE_MAILER_USER_EMAIL}`,
           to: purcherAttendeesData.purcher.email,
           subject: "Registration Confirmation",
           html: htmlContent,
         }),
         transporter.sendMail({
-          from: `'Thrive Global Forum' ${process.env.NODE_MAILER_USER_EMAIL}`,
+          from: `'ICCPC' ${process.env.NODE_MAILER_USER_EMAIL}`,
           to: "registration@iccpc.ca",
           subject: "New Registration",
           html: htmlContent,
@@ -521,11 +521,9 @@ module.exports.downloadPurcherDetails = async (req, res, next) => {
       return res.status(400).send("Invalid purcher ID");
     }
 
-    const purcher = await db
-      .collection("iccpc_2027-Tickets-Purcher")
-      .findOne({
-        _id: new ObjectId(purcherID),
-      });
+    const purcher = await db.collection("iccpc_2027-Tickets-Purcher").findOne({
+      _id: new ObjectId(purcherID),
+    });
 
     console.log("purcher======", purcher);
     if (!purcher) return res.status(404).send("Purcher not found");
@@ -744,9 +742,7 @@ module.exports.getAttendeesData = async (req, res, next) => {
         .skip(skip)
         .limit(limit)
         .toArray(),
-      db
-        .collection("iccpc_2027-Tickets-Attendees")
-        .countDocuments(query),
+      db.collection("iccpc_2027-Tickets-Attendees").countDocuments(query),
     ]);
 
     const totalPages = Math.ceil(filteredCount / limit);
