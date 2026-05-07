@@ -54,6 +54,61 @@ function connectToMoneris() {
 Generate Checkout Ticket
 Used before opening payment UI
 */
+// async function generateCheckoutTicket(orderData) {
+//   try {
+//     console.log("🟡 [STEP 1] generateCheckoutTicket শুরু হয়েছে");
+//     console.log("🟡 [STEP 1] orderData:", orderData);
+
+//     if (!monerisClient) {
+//       console.error("❌ [STEP 1] Moneris client initialize হয়নি");
+//       throw new Error("Moneris not initialized");
+//     }
+
+//     if (!orderData || !orderData.amount || !orderData.orderId) {
+//       console.error("❌ [STEP 1] Invalid orderData:", orderData);
+//       throw new Error("Invalid order data");
+//     }
+
+//     const payload = {
+//       store_id: monerisConfig.store_id,
+//       api_token: monerisConfig.api_token,
+//       checkout_id: monerisConfig.checkout_id,
+//       txn_total: Number(orderData.amount).toFixed(2),
+//       order_no: orderData.orderId,
+//       action: "preload",
+//       environment: process.env.NODE_ENV === "production" ? "prod" : "qa",
+//     };
+
+//     console.log("🟡 [STEP 2] Moneris এ পাঠানো payload:", payload);
+//     console.log("🟡 [STEP 2] Request URL:", `${monerisConfig.host}/chkt/request/request.php`);
+
+//     const response = await axios.post(
+//       `${monerisConfig.host}/chkt/request/request.php`,
+//       payload,
+//       {
+//         headers: { "Content-Type": "application/json" },
+//         timeout: monerisConfig.timeout,
+//       }
+//     );
+
+//     console.log("🟡 [STEP 3] Moneris থেকে response আসছে:", JSON.stringify(response.data, null, 2));
+
+//     if (!response.data?.response?.ticket) {
+//       console.error("❌ [STEP 3] Ticket পাওয়া যায়নি। Response:", response.data);
+//       throw new Error("Invalid Moneris ticket response");
+//     }
+
+//     const ticket = response.data.response.ticket;
+//     console.log("✅ [STEP 3] Ticket সফলভাবে পাওয়া গেছে:", ticket);
+
+//     return ticket;
+
+//   } catch (error) {
+//     console.error("❌ [STEP 3] generateCheckoutTicket এ error:", error.response?.data || error.message);
+//     throw new Error("Failed to generate Moneris ticket");
+//   }
+// }
+
 async function generateCheckoutTicket(orderData) {
   try {
     console.log("🟡 [STEP 1] generateCheckoutTicket শুরু হয়েছে");
@@ -76,36 +131,80 @@ async function generateCheckoutTicket(orderData) {
       txn_total: Number(orderData.amount).toFixed(2),
       order_no: orderData.orderId,
       action: "preload",
-      environment: process.env.NODE_ENV === "production" ? "prod" : "qa",
+      environment:
+        process.env.NODE_ENV === "production"
+          ? "prod"
+          : "qa",
+
+      /* =========================================
+         FORCE 3DS
+      ========================================= */
+      threeDSRequestorChallengeInd: "04",
+      /* =========================================
+         OPTIONAL SECURITY SETTINGS
+      ========================================= */
+      language: "en",
+      dynamic_descriptor: "ICCPC",
     };
 
-    console.log("🟡 [STEP 2] Moneris এ পাঠানো payload:", payload);
-    console.log("🟡 [STEP 2] Request URL:", `${monerisConfig.host}/chkt/request/request.php`);
+    console.log(
+      "🟡 [STEP 2] Moneris এ পাঠানো payload:",
+      JSON.stringify(payload, null, 2)
+    );
+
+    console.log(
+      "🟡 [STEP 2] Request URL:",
+      `${monerisConfig.host}/chkt/request/request.php`
+    );
 
     const response = await axios.post(
       `${monerisConfig.host}/chkt/request/request.php`,
       payload,
       {
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         timeout: monerisConfig.timeout,
       }
     );
 
-    console.log("🟡 [STEP 3] Moneris থেকে response আসছে:", JSON.stringify(response.data, null, 2));
+    console.log(
+      "🟡 [STEP 3] Moneris থেকে response আসছে:",
+      JSON.stringify(response.data, null, 2)
+    );
 
     if (!response.data?.response?.ticket) {
-      console.error("❌ [STEP 3] Ticket পাওয়া যায়নি। Response:", response.data);
-      throw new Error("Invalid Moneris ticket response");
+      console.error(
+        "❌ [STEP 3] Ticket পাওয়া যায়নি। Response:",
+        response.data
+      );
+
+      throw new Error(
+        "Invalid Moneris ticket response"
+      );
     }
 
     const ticket = response.data.response.ticket;
-    console.log("✅ [STEP 3] Ticket সফলভাবে পাওয়া গেছে:", ticket);
+
+    console.log(
+      "✅ [STEP 3] Ticket সফলভাবে পাওয়া গেছে:",
+      ticket
+    );
+
+    console.log(
+      "✅ [3DS] Forced 3DS challenge requested"
+    );
 
     return ticket;
-
   } catch (error) {
-    console.error("❌ [STEP 3] generateCheckoutTicket এ error:", error.response?.data || error.message);
-    throw new Error("Failed to generate Moneris ticket");
+    console.error(
+      "❌ [STEP 3] generateCheckoutTicket এ error:",
+      error.response?.data || error.message
+    );
+
+    throw new Error(
+      "Failed to generate Moneris ticket"
+    );
   }
 }
 
