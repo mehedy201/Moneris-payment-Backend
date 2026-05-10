@@ -21,7 +21,7 @@ console.log("PASS LENGTH:", process.env.NODE_MAILER_PASSWORD?.length);
 
 // Live Site Email Configuration
 module.exports.transporter = nodemailer.createTransport({
-    host: "mail.event.iccpc.ca",
+    host: "mail.iccpc.ca",
     port: 465,
     secure: true, // Use `true` for port 465, `false` for all other ports if false 587 port
     auth: {
