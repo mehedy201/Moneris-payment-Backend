@@ -63,7 +63,7 @@ module.exports.getMonerisTicket = async (req, res) => {
 
     let couponDiscount = 0;
     if (cuponCode === "Malik03") {
-      couponDiscount = 505;
+      couponDiscount = 456;
       totalWithTax -= couponDiscount;
       console.log("🟡 [STEP 5] Coupon discount applied:", couponDiscount);
     }
@@ -220,7 +220,7 @@ STEP 3: CALCULATION
 
     let couponDiscount = 0;
     if (cuponCode === "Malik03") {
-      couponDiscount = 505;
+      couponDiscount = 456;
       totalWithTax = +(totalWithTax - couponDiscount).toFixed(2);
       console.log("🟡 [STEP 3] couponDiscount:", couponDiscount);
     }
