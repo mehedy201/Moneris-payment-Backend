@@ -99,7 +99,8 @@ module.exports.getMonerisTicket = async (req, res) => {
       ticket,
       orderId,
       amount: payAblePrice,
-      status: "Pending",
+      status: "Attempted Payment",
+      date: new Date(),
     };
 
     await db
