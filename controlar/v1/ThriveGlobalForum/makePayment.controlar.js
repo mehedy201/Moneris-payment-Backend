@@ -9,6 +9,7 @@ const localDate = require("../../../hooks/loacalDate");
 const ExcelJS = require("exceljs");
 
 module.exports.getMonerisTicket = async (req, res) => {
+  const db = getDb();
   try {
     console.log("🟡 [STEP 4] getMonerisTicket controller");
     console.log("🟡 [STEP 4] Query params:", req.query);
@@ -21,17 +22,20 @@ module.exports.getMonerisTicket = async (req, res) => {
       lowTicketsQuantity,
       fullTicketsQuantity,
       corporateTicketsQuantity,
+      studentTicketsQuantity,
       cuponCode,
     } = req.query;
 
     const lowPrice = 440;
-    const fullPrice = 500;
-    const corpPrice = 550;
+    const fullPrice = 450;
+    const corpPrice = 500;
+    const studentPrice = 350;
     const taxRate = 0.15;
 
     const totalTickets =
       Number(lowTicketsQuantity) +
       Number(fullTicketsQuantity) +
+      Number(studentTicketsQuantity) +
       Number(corporateTicketsQuantity);
 
     console.log("🟡 [STEP 4] Total tickets:", totalTickets);
@@ -44,6 +48,7 @@ module.exports.getMonerisTicket = async (req, res) => {
     let totalPrice =
       lowTicketsQuantity * lowPrice +
       fullTicketsQuantity * fullPrice +
+      studentTicketsQuantity * studentPrice +
       corporateTicketsQuantity * corpPrice;
 
     console.log("🟡 [STEP 5] Total price (tax ছাড়া):", totalPrice);
@@ -90,6 +95,17 @@ module.exports.getMonerisTicket = async (req, res) => {
 
     console.log("✅ [STEP 6] Ticket পাওয়া গেছে:", ticket);
 
+    const attemptedPayment = {
+      ticket,
+      orderId,
+      amount: payAblePrice,
+      status: "Pending",
+    };
+
+    await db
+      .collection("iccpc_2027-Attempted-Payments")
+      .insertOne(attemptedPayment);
+
     res.status(200).json({ ticket, orderId, amount: payAblePrice });
   } catch (error) {
     console.error(
@@ -117,7 +133,7 @@ const sendEmailToAttendee = async (attendee) => {
       from: `'ICCPC' ${process.env.NODE_MAILER_USER_EMAIL}`,
       to: attendee.email,
       subject:
-        "Acknowledgement of Registration-Innovate, Empower, Thrive: Pioneering Solutions for Business, Health, and Climate Resilience at #InnovateEmpowerThrive2027",
+        "Acknowledgement of Registration-3rd International Conference on Business Health and Climate.",
       html: htmlContent,
     });
 
@@ -137,6 +153,7 @@ module.exports.verifyMonerisPayment = async (req, res) => {
     lowTicketsQuantity,
     fullTicketsQuantity,
     corporateTicketsQuantity,
+    studentTicketsQuantity,
     cuponCode,
     purcherAttendeesData,
   } = req.body;
@@ -183,13 +200,15 @@ module.exports.verifyMonerisPayment = async (req, res) => {
 STEP 3: CALCULATION
 ================================================ */
     const LOW_PRICE = 440;
-    const FULL_PRICE = 500;
-    const CORP_PRICE = 550;
+    const FULL_PRICE = 450;
+    const CORP_PRICE = 500;
+    const STUDENT_PRICE = 350;
     const taxRate = 0.15;
 
     const totalTickets =
       Number(lowTicketsQuantity) +
       Number(fullTicketsQuantity) +
+      Number(studentTicketsQuantity) +
       Number(corporateTicketsQuantity);
 
     if (totalTickets <= 0) {
@@ -202,6 +221,7 @@ STEP 3: CALCULATION
     const totalPrice =
       Number(lowTicketsQuantity) * LOW_PRICE +
       Number(fullTicketsQuantity) * FULL_PRICE +
+      Number(studentTicketsQuantity) * STUDENT_PRICE +
       Number(corporateTicketsQuantity) * CORP_PRICE;
 
     const taxAmount = +(totalPrice * taxRate).toFixed(2);
@@ -241,6 +261,7 @@ STEP 6: ATTENDEE CALCULATION
       "Low and Middle Income Countries": LOW_PRICE,
       "Full Conference Registration": FULL_PRICE,
       Corporate: CORP_PRICE,
+      Student: STUDENT_PRICE,
     };
 
     const enrichedAttendees = purcherAttendeesData.attendees.map(
@@ -340,6 +361,7 @@ STEP 6: ATTENDEE CALCULATION
         lowTicketsQuantity,
         fullTicketsQuantity,
         corporateTicketsQuantity,
+        studentTicketsQuantity,
         totalTickets,
         finalAmount: payAblePrice,
         transactionID: ticket,
@@ -398,6 +420,7 @@ STEP 6: ATTENDEE CALCULATION
         lowTicketsQuantity,
         fullTicketsQuantity,
         corporateTicketsQuantity,
+        studentTicketsQuantity,
         attendees: attendeesWithIds,
         purcher: purcherAttendeesData.purcher,
         createdAt: new Date(),

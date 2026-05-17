@@ -50,65 +50,6 @@ function connectToMoneris() {
   }
 }
 
-/**
-Generate Checkout Ticket
-Used before opening payment UI
-*/
-// async function generateCheckoutTicket(orderData) {
-//   try {
-//     console.log("🟡 [STEP 1] generateCheckoutTicket শুরু হয়েছে");
-//     console.log("🟡 [STEP 1] orderData:", orderData);
-
-//     if (!monerisClient) {
-//       console.error("❌ [STEP 1] Moneris client initialize হয়নি");
-//       throw new Error("Moneris not initialized");
-//     }
-
-//     if (!orderData || !orderData.amount || !orderData.orderId) {
-//       console.error("❌ [STEP 1] Invalid orderData:", orderData);
-//       throw new Error("Invalid order data");
-//     }
-
-//     const payload = {
-//       store_id: monerisConfig.store_id,
-//       api_token: monerisConfig.api_token,
-//       checkout_id: monerisConfig.checkout_id,
-//       txn_total: Number(orderData.amount).toFixed(2),
-//       order_no: orderData.orderId,
-//       action: "preload",
-//       environment: process.env.NODE_ENV === "production" ? "prod" : "qa",
-//     };
-
-//     console.log("🟡 [STEP 2] Moneris এ পাঠানো payload:", payload);
-//     console.log("🟡 [STEP 2] Request URL:", `${monerisConfig.host}/chkt/request/request.php`);
-
-//     const response = await axios.post(
-//       `${monerisConfig.host}/chkt/request/request.php`,
-//       payload,
-//       {
-//         headers: { "Content-Type": "application/json" },
-//         timeout: monerisConfig.timeout,
-//       }
-//     );
-
-//     console.log("🟡 [STEP 3] Moneris থেকে response আসছে:", JSON.stringify(response.data, null, 2));
-
-//     if (!response.data?.response?.ticket) {
-//       console.error("❌ [STEP 3] Ticket পাওয়া যায়নি। Response:", response.data);
-//       throw new Error("Invalid Moneris ticket response");
-//     }
-
-//     const ticket = response.data.response.ticket;
-//     console.log("✅ [STEP 3] Ticket সফলভাবে পাওয়া গেছে:", ticket);
-
-//     return ticket;
-
-//   } catch (error) {
-//     console.error("❌ [STEP 3] generateCheckoutTicket এ error:", error.response?.data || error.message);
-//     throw new Error("Failed to generate Moneris ticket");
-//   }
-// }
-
 async function generateCheckoutTicket(orderData) {
   try {
     console.log("🟡 [STEP 1] generateCheckoutTicket শুরু হয়েছে");
@@ -208,78 +149,6 @@ async function generateCheckoutTicket(orderData) {
   }
 }
 
-
-// async function verifyCheckoutReceipt(ticket, expectedAmount) {
-// try {
-// console.log("STEP-1: verifyCheckoutReceipt started");
-// console.log("STEP-1 Ticket:", ticket);
-
-// if (!ticket) {
-// console.log("STEP-1 ERROR: Missing ticket");
-// throw new Error("Missing ticket");
-// }
-
-// /* =========================
-// STEP-2: BASIC VALIDATION
-// ========================= */
-
-// if (!monerisConfig) {
-// console.log("STEP-2 ERROR: Config missing");
-// throw new Error("Moneris config missing");
-// }
-
-// console.log("STEP-2: Config OK");
-
-// /* =========================
-// STEP-3: NO receipt.php CALL (IMPORTANT FIX)
-// ========================= */
-
-// console.log("STEP-3: Skipping receipt.php (deprecated)");
-
-// // 👉 Moneris Checkout does NOT provide safe backend receipt API in QA
-// // So we trust checkout ticket + frontend success event
-
-// /* =========================
-// STEP-4: MOCK / SAFE VERIFICATION LOGIC
-// ========================= */
-
-// console.log("STEP-4: Validating payment state");
-
-// const receipt = {
-// ticket,
-// result: "a",
-// status: "approved",
-// verified: true,
-// environment: process.env.NODE_ENV === "production" ? "prod" : "qa"
-// };
-
-// console.log("STEP-4 Receipt generated:", receipt);
-
-// /* =========================
-// STEP-5: AMOUNT CHECK (VERY IMPORTANT)
-// ========================= */
-
-// if (expectedAmount) {
-// console.log("STEP-5 Expected amount:", expectedAmount);
-
-// receipt.amountValidated = true;
-// receipt.amount = expectedAmount;
-// }
-
-// /* =========================
-// STEP-6: FINAL SUCCESS
-// ========================= */
-
-// console.log("STEP-6: Payment verified successfully");
-
-// return receipt;
-
-// } catch (error) {
-// console.log("FINAL ERROR:", error.message);
-// throw new Error("Failed to verify Moneris payment");
-// }
-// }
-
 async function verifyCheckoutReceipt(ticket) {
   try {
     console.log("🟡 [VERIFY] verifyCheckoutReceipt শুরু হয়েছে");
@@ -350,6 +219,10 @@ async function verifyCheckoutReceipt(ticket) {
       card_type: ccReceipt.card_type,
       first6last4: ccReceipt.first6last4,
     };
+
+    console.log("3DS cavv:", ccReceipt?.cavv);
+    console.log("3DS eci:", ccReceipt?.eci);
+    console.log("3DS transStatus:", ccReceipt?.transStatus);
 
   } catch (error) {
     console.error("❌ [VERIFY] Error:", error.response?.data || error.message);
